@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NetWatch SOC | Next-Gen Network Defense</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/static/css/style.css" />
+  <style>
+    body { display: block; overflow-x: hidden; background: #020617; }
+    
+    /* Hero Section */
+    .hero-section {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4rem 2rem;
+      text-align: center;
+      position: relative;
+    }
+    .hero-title {
+      font-size: 5rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--accent-primary) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 1.5rem;
+    }
+    .hero-subtitle {
+      font-size: 1.25rem;
+      color: var(--text-muted);
+      max-width: 650px;
+      margin-bottom: 3.5rem;
+      line-height: 1.7;
+    }
+    .hero-metrics {
+      display: flex;
+      gap: 3rem;
+      margin-bottom: 4rem;
+    }
+    .metric-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .metric-value { font-size: 2.5rem; font-weight: 700; color: var(--accent-cyan); }
+    .metric-label { font-size: 0.85rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Mock Demo Visualization */
+    .demo-frame {
+      width: 100%;
+      max-width: 1000px;
+      height: 400px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      position: relative;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.8);
+      margin: 4rem 0;
+    }
+    .mock-chart {
+        padding: 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .mock-row { display: flex; gap: 1rem; align-items: center; }
+    .mock-bar { height: 12px; background: var(--border); border-radius: 6px; flex-grow: 1; position: relative; overflow: hidden; }
+    .mock-fill { height: 100%; background: var(--accent-primary); width: 0%; transition: width 2s ease-in-out; }
+    .mock-indicator { width: 40px; text-align: right; font-family: monospace; font-size: 0.8rem; color: var(--accent-cyan); }
+
+    /* Feature Grid */
+    .section-title { font-size: 2.5rem; margin-bottom: 4rem; text-align: center; }
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 2rem;
+      max-width: 1200px;
+      margin: 0 auto 8rem;
+    }
+    .feat-card {
+      background: var(--bg-glass);
+      border: 1px solid var(--border);
+      padding: 2.5rem;
+      border-radius: var(--radius-md);
+      transition: var(--transition);
+    }
+    .feat-card:hover { transform: translateY(-10px); background: rgba(255,255,255,0.03); }
+    .feat-icon { margin-bottom: 1.5rem; color: var(--accent-cyan); }
+    .feat-icon svg { width: 32px; height: 32px; }
+
+    /* Pipeline Section */
+    .pipeline-wrap {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        max-width: 1000px;
+        margin: 6rem auto;
+        position: relative;
+    }
+    .pipe-step { text-align: center; width: 140px; z-index: 2; }
+    .pipe-icon { 
+        width: 64px; height: 64px; background: var(--bg-surface); border: 2px solid var(--border);
+        border-radius: 50%; display: grid; place-items: center; margin: 0 auto 1rem;
+    }
+    .pipe-line { position: absolute; height: 2px; background: var(--border); top: 31px; left: 70px; right: 70px; z-index: 1; }
+
+    /* CTA Section */
+    .cta-wrap { display: flex; gap: 1.5rem; }
+    .btn-hero { padding: 1.2rem 3rem; font-size: 1.1rem; border-radius: 99px; font-weight: 700; cursor: pointer; transition: 0.3s; text-decoration: none; }
+    .btn-primary { background: var(--accent-primary); color: #000; border: none; }
+    .btn-outline { background: transparent; color: #fff; border: 2px solid var(--border); }
+    .btn-hero:hover { transform: scale(1.05); }
+
+    /* Animation classes */
+    .pulse-red { color: var(--accent-red); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+  </style>
+</head>
+<body>
+
+<section class="hero-section">
+  <div class="brand-icon" style="width:64px; height:64px; margin-bottom: 2rem; color: var(--accent-primary);">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><circle cx="12" cy="11" r="2"/><path d="M12 13v3"/></svg>
+  </div>
+  <h1 class="hero-title">NetWatch SOC</h1>
+  <p class="hero-subtitle">Artificial Intelligence engineered for high-performance network forensics. Detect, isolate, and investigate threats with millisecond precision.</p>
+
+  <div class="hero-metrics">
+    <div class="metric-item">
+      <span class="metric-value">0ms</span>
+      <span class="metric-label">Detection Latency</span>
+    </div>
+    <div class="metric-item">
+        <span class="metric-value">99.4%</span>
+        <span class="metric-label">Model Accuracy</span>
+    </div>
+    <div class="metric-item">
+        <span class="metric-value">24/7</span>
+        <span class="metric-label">Autonomous Ops</span>
+    </div>
+  </div>
+
+  <div class="cta-wrap">
+    <a href="/dashboard?real=1" class="btn-hero btn-primary">Launch Dashboard</a>
+    <button onclick="startDemo()" id="btn-demo" class="btn-hero btn-outline">Run Demo Simulation</button>
+  </div>
+
+  <!-- Animated Demo Visualization -->
+  <div class="demo-frame">
+      <div class="mock-chart">
+          <header style="display:flex; justify-content:space-between; margin-bottom: 1rem;">
+              <span style="font-weight:600; font-size:0.9rem;">LIVE TELEMETRY STREAM</span>
+              <span class="pulse-red" style="font-size:0.8rem; font-weight:700;">● SYSTEM MONITORING</span>
+          </header>
+          <div class="mock-row">
+              <span style="font-size:0.75rem; width:80px">Inbound Flow</span>
+              <div class="mock-bar"><div class="mock-fill" id="fill-1" style="width: 72%"></div></div>
+              <span class="mock-indicator">72%</span>
+          </div>
+          <div class="mock-row">
+              <span style="font-size:0.75rem; width:80px">CPU Load</span>
+              <div class="mock-bar"><div class="mock-fill" id="fill-2" style="width: 24%"></div></div>
+              <span class="mock-indicator">24%</span>
+          </div>
+          <div class="mock-row" style="margin-top:2rem">
+            <div id="mock-alert" style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); padding: 1.5rem; border-radius: 8px; width: 100%; text-align: left;">
+                <div style="color: var(--accent-red); font-weight: 700; font-size: 0.8rem; margin-bottom: 0.5rem;">🚨 ANOMALY DETECTED</div>
+                <div style="font-size: 0.9rem; font-family: monospace;">SRC: 192.168.1.45 &rarr; DST: INTERNAL_DB_SRV</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.5rem;">Pattern Analysis: Unusual encrypted egress burst detected. Score: -0.42</div>
+            </div>
+          </div>
+      </div>
+  </div>
+</section>
+
+<section style="padding: 100px 2rem;">
+    <h2 class="section-title">Analysis Pipeline</h2>
+    <div class="pipeline-wrap">
+        <div class="pipe-line"></div>
+        <div class="pipe-step">
+            <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+            <p style="font-weight:600;">Capture</p>
+        </div>
+        <div class="pipe-step">
+            <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg></div>
+            <p style="font-weight:600;">Feature Agg</p>
+        </div>
+        <div class="pipe-step">
+            <div class="pipe-icon" style="border-color: var(--accent-cyan);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M2 12h20"/></svg></div>
+            <p style="font-weight:600; color:var(--accent-cyan)">Isolation Forest</p>
+        </div>
+        <div class="pipe-step">
+            <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <p style="font-weight:600;">Detection</p>
+        </div>
+        <div class="pipe-step">
+            <div class="pipe-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg></div>
+            <p style="font-weight:600;">Forensics</p>
+        </div>
+    </div>
+</section>
+
+<section class="feature-grid">
+    <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg></div>
+        <h3>Real-time Modeling</h3>
+        <p style="color:var(--text-muted);">Self-correcting AI baseline that learns your network's unique rhythm in minutes.</p>
+    </div>
+    <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+        <h3>Zero-Trust Analysis</h3>
+        <p style="color:var(--text-muted);">Advanced Isolation Forest clustering to find "few and different" anomalies.</p>
+    </div>
+    <div class="feat-card">
+        <div class="feat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg></div>
+        <h3>Investigation Bridge</h3>
+        <p style="color:var(--text-muted);">One-click forensic investigation of every detected threat.</p>
+    </div>
+</section>
+
+<script>
+    // Demo mode start logic
+    async function startDemo() {
+        const btn = document.getElementById('btn-demo');
+        btn.innerHTML = 'Spinning up Simulation...';
+        btn.disabled = true;
+
+        try {
+            await fetch('/api/start', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({mode: 'demo'})
+            });
+            window.location.href = '/dashboard';
+        } catch(e) {
+            btn.innerHTML = 'Simulation Failed';
+            btn.disabled = false;
+        }
+    }
+
+    // Small animation for visual mock demo
+    setInterval(() => {
+        const f1 = document.getElementById('fill-1');
+        const f2 = document.getElementById('fill-2');
+        if(f1) f1.style.width = Math.floor(Math.random() * 40 + 40) + '%';
+        if(f2) f2.style.width = Math.floor(Math.random() * 20 + 10) + '%';
+    }, 3000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}Dashboard | NetWatch SOC Command Center{% endblock %}
+
+{% block extra_head %}
+<style>
+/* Dashboard Grid Overhaul */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: auto auto auto;
+    gap: 1.5rem;
+}
+
+/* Modal Styling */
+.modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px);
+    display: none; align-items: center; justify-content: center; z-index: 2000;
+}
+.modal-content {
+    background: var(--bg-surface); border: 1px solid var(--border); padding: 3rem;
+    border-radius: var(--radius-md); width: 100%; max-width: 550px;
+    box-shadow: var(--shadow-card);
+}
+
+/* Skeleton Loader */
+.skeleton {
+    background: linear-gradient(90deg, var(--bg-surface) 25%, var(--border) 50%, var(--bg-surface) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    height: 1.5rem;
+    width: 100%;
+}
+@keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+/* Demo Badge */
+.demo-badge {
+    background: var(--accent-amber); color: #000; font-weight: 800; font-size: 0.7rem;
+    padding: 0.2rem 0.6rem; border-radius: 4px; margin-left: 1rem; letter-spacing: 1px;
+}
+
+/* Insight Card */
+.insight-card { border-left: 4px solid var(--accent-cyan); }
+.insight-text { font-size: 0.9rem; line-height: 1.6; color: var(--text-muted); font-style: italic; }
+
+/* Advanced Gauges */
+.gauge-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.gauge-item { text-align: center; }
+.gauge-val { font-family: monospace; font-size: 1.4rem; color: var(--accent-purple); display: block; }
+.gauge-lab { font-size: 0.75rem; color: var(--text-dim); text-transform: uppercase; }
+
+/* Tooltip Tour Overlay */
+.tour-box {
+    position: absolute; z-index: 3000; background: var(--accent-primary); color: #000;
+    padding: 1.5rem; border-radius: 8px; font-weight: 600; font-size: 0.9rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5); pointer-events: none;
+    transition: all 0.3s ease;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="soc-status" data-is-demo="{{ 'true' if is_demo else 'false' }}" style="display: flex; align-items: center; margin-bottom: 2rem;">
+    <h1 style="font-weight: 300; margin:0;">Command Center</h1>
+    {% if is_demo %}
+        <span class="demo-badge">DEMO MODE ACTIVE</span>
+        <button class="panel-btn" onclick="stopSimulation()" style="margin-left: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); color: var(--accent-red);">
+            Stop Simulation
+        </button>
+    {% endif %}
+    <div style="margin-left: auto; display: flex; gap: 1rem;">
+        <button class="panel-btn" onclick="openConfig()" style="background: var(--bg-surface); border: 1px solid var(--border);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px; margin-right:8px;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            Engine Configuration
+        </button>
+        {% if not is_demo %}
+        <button class="panel-btn" id="btn-start" onclick="openConfig()" style="background: var(--accent-primary); color: #000; font-weight: 700;">
+            Start Real-time Monitoring
+        </button>
+        {% endif %}
+    </div>
+</div>
+
+<div class="dashboard-grid">
+    <!-- Stat row -->
+    <div class="stat-card" id="tour-rhythm">
+        <div class="stat-icon stat-icon--blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+        <div>
+            <p class="stat-label">Network Rhythm</p>
+            <p class="stat-value" id="val-rhythm"><div class="skeleton"></div></p>
+        </div>
+    </div>
+    <div class="stat-card" id="tour-density">
+        <div class="stat-icon stat-icon--purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+        <div>
+            <p class="stat-label">Anomaly Density</p>
+            <p class="stat-value" id="val-density"><div class="skeleton" style="width:60%"></div></p>
+        </div>
+    </div>
+    <div class="stat-card insight-card" id="tour-insights">
+        <div>
+            <p class="stat-label">AI Insights Agent</p>
+            <p class="insight-text" id="val-insight">Scanning for behavioral patterns...</p>
+        </div>
+    </div>
+    <div class="stat-card" id="tour-risk" style="border-left: 4px solid var(--accent-red);">
+        <div class="stat-icon stat-icon--red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <div>
+            <p class="stat-label">Total System Risk</p>
+            <p class="stat-value" id="val-risk">0 / 100</p>
+        </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="chart-card" style="grid-column: span 2;">
+        <h2 class="chart-title">Global Traffic Stream</h2>
+        <div class="chart-wrap"><canvas id="chart-traffic"></canvas></div>
+    </div>
+    <div class="chart-card" style="grid-column: span 2;">
+        <h2 class="chart-title" id="tour-forensic">Normality Score Forensics</h2>
+        <div class="chart-wrap"><canvas id="chart-score"></canvas></div>
+    </div>
+
+    <!-- Alerts and List -->
+    <div class="panel" id="tour-alerts">
+        <div class="panel-header"><h2 class="panel-title">Alert Feed</h2></div>
+        <ul class="alert-list" id="alert-list"><div class="skeleton" style="margin:1rem"></div><div class="skeleton" style="margin:1rem; width:80%"></div></ul>
+    </div>
+    
+    <div class="panel" style="grid-column: span 2;" id="tour-flows">
+        <div class="panel-header"><h2 class="panel-title">Analyzed Flow Clusters</h2></div>
+        <div class="table-wrap">
+            <table class="flow-table">
+                <thead><tr><th>Identifier</th><th>Volume</th><th>Score</th><th>Status</th></tr></thead>
+                <tbody id="flow-tbody"><tr><td colspan="4"><div class="skeleton"></div></td></tr></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Advanced Content -->
+    <div class="panel">
+        <h2 class="panel-title" style="padding:1rem; padding-bottom:0">Advanced SOC Metrics</h2>
+        <div class="gauge-grid p-3">
+            <div class="gauge-item"><span class="gauge-val" id="val-entropy">0.82</span><span class="gauge-lab">Entropy</span></div>
+            <div class="gauge-item"><span class="gauge-val" id="val-variance">14.2</span><span class="gauge-lab">Packet Var</span></div>
+        </div>
+        <h2 class="panel-title" style="padding:1rem; padding-top:0">Topology Mapping</h2>
+        <div id="tour-topology" style="height: 120px; padding: 1rem; border-top: 1px solid var(--border);">
+            <ul class="tt-list" id="topology-list" style="font-size:0.75rem;"><li>Scanning connections...</li></ul>
+        </div>
+    </div>
+</div>
+
+<!-- Config Modal -->
+<div class="modal-backdrop" id="config-modal">
+    <div class="modal-content">
+        <h2 style="margin-bottom: 0.5rem;">Engine Deployment</h2>
+        <p style="color: var(--text-muted); margin-bottom: 2rem; font-size: 0.9rem;">Initialize the AI engine with host configurations.</p>
+        
+        <div class="form-group">
+            <label class="form-label">Network Interface</label>
+            <select class="form-select" id="cfg-iface">
+                <option value="auto">Auto-Detect</option>
+                <option value="eth0">eth0</option>
+                <option value="wlan0">wlan0</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Calibration Duration (s)</label>
+            <input type="number" class="form-input" id="cfg-dur" value="30">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Sensitivity Contamination</label>
+            <input type="number" step="0.01" class="form-input" id="cfg-sens" value="0.05">
+        </div>
+        
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button class="panel-btn" onclick="closeConfig()" style="flex:1">Cancel</button>
+            <button class="panel-btn" onclick="startMonitoring()" style="flex:2; background: var(--accent-primary); color: #000; font-weight:700">Deploy Engine</button>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    let IS_DEMO = document.getElementById('soc-status').dataset.isDemo === 'true';
+</script>
+<script src="/static/js/dashboard.js"></script>
+<script src="/static/js/onboarding.js"></script>
+{% endblock %}

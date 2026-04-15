@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}Anomaly Investigation | NetWatch AI{% endblock %}
+
+{% block extra_head %}
+<style>
+.forensic-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 2rem; margin-top: 1.5rem; }
+.detail-card { background: var(--bg-card); border: 1px solid var(--border); padding: 2rem; border-radius: var(--radius-md); }
+.data-label { color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.4rem; letter-spacing: 0.05em; }
+.data-value { font-family: var(--font-mono); font-size: 1.25rem; color: var(--text-primary); margin-bottom: 1.5rem; }
+.severity-badge { display: inline-block; padding: 0.4rem 1rem; border-radius: 99px; font-weight: 700; font-size: 0.8rem; margin-bottom: 2rem; }
+.sev-high { background: rgba(239, 68, 68, 0.15); color: var(--accent-red); border: 1px solid rgba(239, 68, 68, 0.3); }
+.sev-med { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.mini-chart-wrap { height: 120px; margin-bottom: 2rem; }
+.explanation-box { background: rgba(79, 156, 249, 0.05); border-left: 4px solid var(--accent-primary); padding: 1.5rem; border-radius: 4px; margin-top: 2rem; }
+.related-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+.related-table th { text-align: left; color: var(--text-muted); padding: 0.5rem; border-bottom: 1px solid var(--border); font-weight: 500; }
+.related-table td { padding: 0.6rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <div>
+        <h1 style="font-weight: 600; font-size: 2rem; margin-bottom: 0.5rem;">Incident Investigation</h1>
+        <p style="color: var(--text-muted);">Forensic deep-dive for flow cluster <span class="font-mono" style="color:var(--accent-primary)">{{ flow_key }}</span></p>
+    </div>
+    <a href="/dashboard" class="nav-link" style="border: 1px solid var(--border);">&larr; Return to SOC</a>
+</div>
+
+<div class="forensic-grid">
+    <div class="detail-card">
+        <h3 style="margin-bottom: 2rem; font-weight: 500;">Cluster Telemetry</h3>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+            <div>
+                <div class="data-label">Total Packets</div>
+                <div class="data-value" id="f-pkts">...</div>
+            </div>
+            <div>
+                <div class="data-label">Payload Volume</div>
+                <div class="data-value" id="f-bytes">...</div>
+            </div>
+            <div>
+                <div class="data-label">Measured Duration</div>
+                <div class="data-value" id="f-dur">...</div>
+            </div>
+            <div>
+                <div class="data-label">Avg Inter-arrival (IAT)</div>
+                <div class="data-value" id="f-iat">...</div>
+            </div>
+            <div>
+                <div class="data-label">Anomaly Score</div>
+                <div class="data-value" id="f-score">...</div>
+            </div>
+            <div>
+                <div class="data-label">Protocol</div>
+                <div class="data-value" id="f-proto">...</div>
+            </div>
+        </div>
+
+        <div class="mini-chart-wrap">
+            <canvas id="mini-forensic-chart"></canvas>
+        </div>
+
+        <div class="explanation-box">
+            <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem; font-size: 0.95rem;">AI Heuristic Reasoning</h4>
+            <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);" id="heuristic-text">
+                The engine detected this flow as an outlier due to a statistical deviation in packet density. 
+                Normal patterns in your baseline suggested a sparse interaction, but this cluster exhibited 
+                burst-mode characteristics typical of data exfiltration or automated reconnaissance.
+            </p>
+        </div>
+    </div>
+
+    <div class="detail-card" style="display: flex; flex-direction: column;">
+        <h3 style="margin-bottom: 1.5rem; font-weight: 500;">Related Network Activity</h3>
+        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">Recent flows sharing the same Source or Destination IP address.</p>
+        
+        <div style="flex-grow: 1; overflow-y: auto;">
+            <table class="related-table">
+                <thead>
+                    <tr>
+                        <th>Peer / Key</th>
+                        <th>Pkts</th>
+                        <th>Score</th>
+                    </tr>
+                </thead>
+                <tbody id="related-tbody">
+                    <tr><td colspan="3" style="text-align:center; padding: 2rem; color:var(--text-muted);">Fetching related telemetry...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    const flowKey = "{{ flow_key }}".replace(/&amp;/g, "&");
+
+    async function initForensics() {
+        try {
+            const [alertsRes, statsRes] = await Promise.all([
+                fetch("/api/alerts"),
+                fetch("/api/stats")
+            ]);
+            const alerts = await alertsRes.json();
+            const flow = alerts.find(a => a.flow_key === flowKey) || alerts[0];
+
+            if (flow) {
+                document.getElementById('f-pkts').innerText = flow.pkt_count;
+                document.getElementById('f-bytes').innerText = (flow.byte_count / 1024).toFixed(2) + " KB";
+                document.getElementById('f-dur').innerText = flow.duration_s?.toFixed(2) + "s";
+                document.getElementById('f-iat').innerText = flow.avg_iat_ms?.toFixed(1) + "ms";
+                document.getElementById('f-score').innerText = flow.score?.toFixed(5);
+                document.getElementById('f-proto').innerText = flow.proto || "TCP";
+            }
+
+            // Fetch Related
+            const ip = flow.src_ip || "127.0.0.1";
+            const relatedRes = await fetch(`/api/related_flows/${encodeURIComponent(ip)}`);
+            const related = await relatedRes.json();
+            
+            const tbody = document.getElementById('related-tbody');
+            tbody.innerHTML = related.map(r => `
+                <tr>
+                    <td class="font-mono" style="font-size:0.75rem; color:var(--accent-primary);">${r.flow_key.split('|').slice(-2).join(':')}</td>
+                    <td>${r.pkt_count}</td>
+                    <td style="color: ${r.score < 0 ? 'var(--accent-red)' : 'var(--accent-green)'}">${r.score?.toFixed(3)}</td>
+                </tr>
+            `).join("") || "<tr><td colspan='3'>No peer flows found.</td></tr>";
+
+            // Render mini timeline
+            new Chart(document.getElementById("mini-forensic-chart"), {
+                type: 'bar',
+                data: {
+                    labels: ['Pkt Density', 'Byte Ratio', 'IAT Stability'],
+                    datasets: [{
+                        label: 'Deviation from Baseline',
+                        data: [flow.pkt_count / 10, flow.byte_count / 1000, flow.avg_iat_ms / 10],
+                        backgroundColor: 'rgba(79, 156, 249, 0.3)',
+                        borderColor: 'var(--accent-primary)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { 
+                        x: { grid: { display: false }, ticks: { display: false } },
+                        y: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        } catch(e) { console.error(e); }
+    }
+
+    initForensics();
+</script>
+{% endblock %}

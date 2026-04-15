@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}NetWatch AI{% endblock %}</title>
+  <meta name="description" content="AI-powered network intrusion detection." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  {% block extra_head %}{% endblock %}
+  <link rel="stylesheet" href="/static/css/style.css" />
+</head>
+<body>
+
+<div class="app-wrapper">
+  {% block sidebar %}
+  <nav class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background: linear-gradient(135deg, var(--accent-primary), var(--accent-cyan));">
+        <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          <circle cx="12" cy="11" r="2"></circle>
+          <path d="M12 13v3"></path>
+        </svg>
+      </div>
+      <span class="brand-name">NetWatch<span class="brand-accent">SOC</span></span>
+    </div>
+
+    <ul class="nav-links">
+      <li><a href="/dashboard" class="nav-link {{ 'active' if request.path == '/dashboard' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+        Command Center
+      </a></li>
+      <li><a href="/settings" class="nav-link {{ 'active' if request.path == '/settings' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+        Configurations
+      </a></li>
+      <li><a href="/about" class="nav-link {{ 'active' if request.path == '/about' }}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+        Methodology
+      </a></li>
+      {% if current_user.is_authenticated %}
+      <hr style="border:0; border-top:1px solid var(--border); margin:1rem 0">
+      <li><a href="/logout" class="nav-link" style="color:var(--accent-red)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        Sign Out
+      </a></li>
+      {% endif %}
+    </ul>
+
+    <div class="sidebar-info" style="border-top-color: var(--border); background: rgba(0,0,0,0.1); padding: 1.5rem;">
+      <p style="font-weight: 600; color: var(--text-primary); margin-bottom: 0.2rem;">NetWatch SOC Engine</p>
+      <p>Node v2.4.1-Stable</p>
+      <div style="margin-top: 1rem; font-size: 0.65rem; color: var(--accent-primary); letter-spacing: 1px;">ISOLATION FOREST ML</div>
+    </div>
+  </nav>
+  {% endblock %}
+
+  <div class="main-content" style="background: var(--bg-deep);">
+    {% block topbar %}
+    <header class="topbar">
+      <div class="topbar-status" id="status-bar" style="border: 1px solid var(--border); padding: 0.4rem 1.2rem; background: var(--bg-surface);">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-label" style="font-weight: 600; font-size: 0.85rem; letter-spacing: 0.5px;">Initializing...</span>
+      </div>
+
+      <div class="topbar-meta" style="display:flex; gap: 0.8rem; margin-left: auto;">
+        <span class="meta-chip" id="chip-windows" style="border-color: var(--border);">0 windows</span>
+        <span class="meta-chip meta-chip--alert" id="chip-alerts">0 threats</span>
+        <span class="meta-chip" style="background: rgba(79, 156, 249, 0.1); color: var(--accent-primary); border: 1px solid rgba(79, 156, 249, 0.2);">Mode: Advanced SOC</span>
+      </div>
+    </header>
+    {% endblock %}
+
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+
+{% block scripts %}{% endblock %}
+
+</body>
+</html>
