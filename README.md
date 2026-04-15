@@ -125,6 +125,12 @@ python app.py
 
 ---
 
-## 💼 Professional Summary
+## � Known Issues
+
+- **Tutorial Button Responsiveness**: The Next, Back, and Skip buttons in the demo mode guided tutorial overlay are not responding to clicks. This appears to be a JavaScript event handling issue with inline onclick handlers. Debugging logs have been added to `static/js/onboarding.js` for troubleshooting. The tutorial overlay displays correctly, but navigation is broken.
+
+---
+
+## �💼 Professional Summary
 
 > Developed a full-stack Security Operations Center (SOC) dashboard utilizing Python and Machine Learning to detect network intrusions in real-time. Engineered a non-blocking ingestion pipeline with Scapy and implemented unsupervised anomaly detection using Isolation Forest. Designed a comprehensive forensic investigation suite allowing security analysts to deep-dive into incident telemetry, IP relationships, and behavioral deviations.
