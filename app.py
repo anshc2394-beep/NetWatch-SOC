@@ -54,10 +54,11 @@ def landing():
 
 @app.route("/dashboard")
 def dashboard():
-    # If ?real=1 is passed, force clear demo mode
+    # If ?real=1 is passed, allow the landing-page dashboard launch without auth
     if request.args.get('real') == '1':
         session['demo_mode'] = False
         logger.log_system("Switching to REAL monitoring mode.")
+        return render_template("dashboard.html", is_demo=False)
 
     # Allow entry if demo mode is active OR user is logged in
     is_demo = session.get('demo_mode', False)
@@ -75,8 +76,9 @@ def about():
     return render_template("about.html")
 
 @app.route("/anomaly/<path:flow_id>")
-@login_required
 def anomaly_detail(flow_id):
+    if not session.get('demo_mode') and not current_user.is_authenticated:
+        return redirect(url_for('landing'))
     return render_template("anomaly_detail.html", flow_key=flow_id)
 
 @app.route("/api/stop", methods=["POST"])

@@ -183,9 +183,12 @@ async function startMonitoring() {
 
 function startSimulation() {
     IS_DEMO = true;
-    document.getElementById('btn-start').innerText = "DEMO SIMULATION ACTIVE";
-    document.getElementById('btn-start').style.background = "var(--border)";
-    document.getElementById('btn-start').disabled = true;
+    const startBtn = document.getElementById('btn-start');
+    if (startBtn) {
+        startBtn.innerText = "DEMO SIMULATION ACTIVE";
+        startBtn.style.background = "var(--border)";
+        startBtn.disabled = true;
+    }
     startPolling();
 }
 

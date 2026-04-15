@@ -25,7 +25,7 @@
         <h1 style="font-weight: 600; font-size: 2rem; margin-bottom: 0.5rem;">Incident Investigation</h1>
         <p style="color: var(--text-muted);">Forensic deep-dive for flow cluster <span class="font-mono" style="color:var(--accent-primary)">{{ flow_key }}</span></p>
     </div>
-    <a href="/dashboard" class="nav-link" style="border: 1px solid var(--border);">&larr; Return to SOC</a>
+    <a href="/dashboard" class="nav-link" id="tour-return" style="border: 1px solid var(--border);">&larr; Return to SOC</a>
 </div>
 
 <div class="forensic-grid">
@@ -63,7 +63,7 @@
             <canvas id="mini-forensic-chart"></canvas>
         </div>
 
-        <div class="explanation-box">
+        <div class="explanation-box" id="tour-investigation">
             <h4 style="color: var(--accent-primary); margin-bottom: 0.5rem; font-size: 0.95rem;">AI Heuristic Reasoning</h4>
             <p style="font-size: 0.9rem; line-height: 1.6; color: var(--text-primary);" id="heuristic-text">
                 The engine detected this flow as an outlier due to a statistical deviation in packet density. 
@@ -98,6 +98,8 @@
 
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>window.IS_DEMO = {{ 'true' if session.get('demo_mode') else 'false' }};</script>
+<script src="/static/js/onboarding.js"></script>
 <script>
     const flowKey = "{{ flow_key }}".replace(/&amp;/g, "&");
 

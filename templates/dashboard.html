@@ -67,6 +67,9 @@
         <button class="panel-btn" onclick="stopSimulation()" style="margin-left: 1rem; background: rgba(239, 68, 68, 0.1); border: 1px solid var(--accent-red); color: var(--accent-red);">
             Stop Simulation
         </button>
+        <button class="panel-btn" onclick="restartDemoTour()" style="margin-left: 0.6rem; background: rgba(79, 156, 249, 0.12); border: 1px solid rgba(79, 156, 249, 0.25); color: var(--accent-cyan);">
+            Restart Tutorial
+        </button>
     {% endif %}
     <div style="margin-left: auto; display: flex; gap: 1rem;">
         <button class="panel-btn" onclick="openConfig()" style="background: var(--bg-surface); border: 1px solid var(--border);">
@@ -186,7 +189,7 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-    let IS_DEMO = document.getElementById('soc-status').dataset.isDemo === 'true';
+    window.IS_DEMO = document.getElementById('soc-status').dataset.isDemo === 'true';
 </script>
 <script src="/static/js/dashboard.js"></script>
 <script src="/static/js/onboarding.js"></script>
