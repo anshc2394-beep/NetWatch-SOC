@@ -14,8 +14,11 @@ import numpy as np
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 
-from core import sniffer
-import core.logger as logger
+from backend.capture import sniffer
+import backend.analysis.logger as logger
+from backend.detection import classify, rules
+from backend.analysis import explain, baseline
+from backend.models.models import db, Alert, Anomaly, BaselineStat
 
 # ── Configuration Variables ───────────────────────────────────────────────────
 CALIBRATION_SECONDS   = 30      # gather baseline before first fit
@@ -41,7 +44,93 @@ _calibration_start: float       = 0.0
 _last_retrain: float            = 0.0
 
 
-def _extract_features(row: dict) -> list | None:
+def _generate_actions(attack_type, anomaly_data):
+    """
+    Generate actionable recommendations based on attack type.
+    
+    Returns: list of action strings
+    """
+    actions = []
+    src_ip = anomaly_data.get('src_ip', 'unknown')
+    
+    if attack_type == "DDoS":
+        actions = [
+            f"Block IP {src_ip} at firewall",
+            "Rate limit incoming traffic on affected ports",
+            f"Investigate device {src_ip} for compromise"
+        ]
+    elif attack_type == "Port Scan":
+        actions = [
+            f"Block IP {src_ip} at firewall",
+            "Monitor for further scanning activity",
+            f"Check logs for successful connections from {src_ip}"
+        ]
+    elif attack_type == "Spoofing":
+        actions = [
+            f"Inspect ARP table for IP {src_ip}",
+            "Enable ARP inspection on network switches",
+            f"Verify device identity for {src_ip}"
+        ]
+    elif attack_type == "Data Exfiltration":
+        actions = [
+            f"Block outbound traffic from {src_ip}",
+            "Enable DLP (Data Loss Prevention) monitoring",
+            f"Investigate data accessed by {src_ip}"
+        ]
+    else:
+        actions = [
+            f"Investigate IP {src_ip} for suspicious activity",
+            "Review recent network logs",
+            "Consider temporary blocking if threat persists"
+        ]
+    
+    return actions
+
+def _save_alert_to_db(alert_data):
+    """Save alert to database."""
+    try:
+        alert = Alert(
+            attack_type=alert_data.get('attack_type'),
+            confidence=alert_data.get('confidence'),
+            severity=_determine_severity(alert_data),
+            src_ip=alert_data.get('src_ip'),
+            description=f"Anomaly detected: {alert_data.get('attack_type', 'Unknown')}",
+            explanation=json.dumps(alert_data.get('explanation', {})),
+            actions=json.dumps(alert_data.get('actions', []))
+        )
+        db.session.add(alert)
+        db.session.commit()
+    except Exception as e:
+        logger.log_system(f"Failed to save alert to DB: {e}")
+
+def _save_anomaly_to_db(anomaly_data):
+    """Save anomaly classification to database."""
+    try:
+        anomaly = Anomaly(
+            flow_key=anomaly_data.get('flow_key', ''),
+            score=anomaly_data.get('score', 0),
+            features=json.dumps(anomaly_data),
+            attack_type=anomaly_data.get('attack_type'),
+            confidence=anomaly_data.get('confidence', 0)
+        )
+        db.session.add(anomaly)
+        db.session.commit()
+    except Exception as e:
+        logger.log_system(f"Failed to save anomaly to DB: {e}")
+
+def _determine_severity(alert_data):
+    """Determine severity based on confidence and attack type."""
+    confidence = alert_data.get('confidence', 0)
+    attack_type = alert_data.get('attack_type', '')
+    
+    if attack_type in ['DDoS', 'Data Exfiltration'] or confidence > 0.8:
+        return 'critical'
+    elif attack_type == 'Port Scan' or confidence > 0.6:
+        return 'high'
+    elif confidence > 0.4:
+        return 'medium'
+    else:
+        return 'low'
     """Convert a feature-window dict → numeric vector."""
     try:
         return [float(row[c]) for c in FEATURE_COLS]
@@ -149,48 +238,43 @@ def _detector_loop():
 
             classified = {**row, "prediction": int(pred), "score": round(float(score), 4)}
 
+            # Update baseline with normal traffic
+            if pred == 1:  # Normal
+                baseline.baseline_learner.update({
+                    'packet_rate': row.get('pkt_count', 0) / row.get('duration_s', 1),
+                    'byte_rate': row.get('byte_count', 0) / row.get('duration_s', 1),
+                    'unique_ips': 1,  # Simplified
+                    'unique_ports': 1
+                })
+
             with _results_lock:
                 results_store.append(classified)
                 if len(results_store) > 500:
                     del results_store[:100]
 
-                if pred == -1:
-                    alerts_store.append(classified)
-                    if len(alerts_store) > 200:
-                        del alerts_store[:50]
-
             if pred == -1:
-                # Log to UI
-                _log_alert(row, score)
-                # Render Rich multi-line panel
-                if LOG_ANOMALIES:
-                    logger.log_alert(row, score)
-
-        processed_up_to += len(new_rows)
-
-        # ── Sliding-window retraining ─────────────────────────────────
-        if time.time() - _last_retrain >= RETRAIN_INTERVAL_S:
-            _last_retrain = time.time()
-
-            # Copy state to pass into worker thread safely
-            with sniffer.feature_windows_lock:
-                recent = list(sniffer.feature_windows[-SLIDING_WINDOW_SIZE:])
-
-            def _background_retrain(recent_windows):
-                X_retrain = [_extract_features(r) for r in recent_windows]
-                X_retrain = [v for v in X_retrain if v is not None]
-
-                if len(X_retrain) >= 5:
-                    _fit_model(np.array(X_retrain))
-                    logger.log_model(f"Model dynamically retrained on {len(X_retrain)} recent windows.")
-
-            retrain_thread = threading.Thread(target=_background_retrain, args=(recent,), daemon=True, name="RetrainWorker")
-            retrain_thread.start()
-
-
-_is_running = False
-
-# ── Public API ────────────────────────────────────────────────────────────────
+                # Classify attack type
+                attack_type, confidence = classify.attack_classifier.predict(vec)
+                classified["attack_type"] = attack_type
+                classified["confidence"] = round(confidence, 3)
+                
+                # Generate explanation
+                explanation = explain.explainer.explain_anomaly(classified)
+                classified["explanation"] = explanation
+                
+                # Generate actionable recommendations
+                actions = _generate_actions(attack_type, classified)
+                classified["actions"] = actions
+                
+                alerts_store.append(classified)
+                if len(alerts_store) > 200:
+                    del alerts_store[:50]
+                    
+                    # Save to database
+                    _save_alert_to_db(classified)
+                
+                # Save all classifications to DB (optional, for analytics)
+                _save_anomaly_to_db(classified)
 def set_config(calib_sec=None, contam=None, log_anom=None):
     global CALIBRATION_SECONDS, CONTAMINATION, LOG_ANOMALIES
     if calib_sec is not None:

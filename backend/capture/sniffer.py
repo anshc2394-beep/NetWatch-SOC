@@ -10,7 +10,8 @@ import os
 from queue import Queue
 from collections import defaultdict
 from scapy.all import sniff, IP, TCP, UDP, ICMP
-import core.logger as logger
+import backend.analysis.logger as logger
+from backend.detection import rules
 
 # ── Shared state ──────────────────────────────────────────────────────────────
 packet_queue: Queue = Queue(maxsize=5000)
@@ -97,6 +98,17 @@ def _feature_worker():
                 flow["last_time"] = now_ms
                 flow["pkt_count"] += 1
                 flow["byte_count"] += pkt_len
+
+            # Rule-based detection
+            packet_data = {
+                'src_ip': key[0],
+                'dst_ip': key[1],
+                'src_port': key[2],
+                'dst_port': key[3],
+                'proto': key[4],
+                'timestamp': now_ms / 1000
+            }
+            rules.rule_detector.process_packet(packet_data)
 
         # Every WINDOW_SECONDS, snapshot flows → feature vector
         now = time.time()

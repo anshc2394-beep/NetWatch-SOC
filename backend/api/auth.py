@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, redirect, url_for, request, flash
 from flask_login import login_user, logout_user, login_required
-from core.models import db, User
+from backend.models.models import db, User
 
 auth_bp = Blueprint('auth', __name__)
 
