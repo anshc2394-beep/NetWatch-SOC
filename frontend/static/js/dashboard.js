@@ -12,6 +12,7 @@ let trafficChart, scoreChart;
 // ── Initialization ───────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
     initCharts();
+    initSocketIO();
     
     if (IS_DEMO) {
         startSimulation();
@@ -20,6 +21,24 @@ document.addEventListener('DOMContentLoaded', () => {
         checkSystemStatus();
     }
 });
+
+function initSocketIO() {
+    const socket = io();
+    
+    socket.on('connect', () => {
+        console.log('Connected to server');
+    });
+    
+    socket.on('new_alert', (data) => {
+        console.log('New alert:', data);
+        addAlertToTable(data);
+        updateMetrics(data);
+    });
+    
+    socket.on('disconnect', () => {
+        console.log('Disconnected from server');
+    });
+}
 
 function initCharts() {
     const commonOpts = {
@@ -237,6 +256,33 @@ async function stopSimulation() {
 
     // Open Config for Real Capture
     openConfig();
+}
+
+// ── Real-time Updates ────────────────────────────────────────────────────────
+
+function addAlertToTable(data) {
+    const tbody = document.getElementById('flow-tbody');
+    const row = document.createElement('tr');
+    row.onclick = () => window.location.href = `/anomaly/${encodeURIComponent(data.flow_key)}`;
+    row.style.cursor = 'pointer';
+    row.innerHTML = `
+        <td class="font-mono" style="font-size:0.75rem">${shorten(data.flow_key)}</td>
+        <td>${data.pkt_count}</td>
+        <td style="color:var(--accent-red)">${data.score.toFixed(3)}</td>
+        <td><span class="badge badge--anomaly">SUSPECT</span></td>
+    `;
+    tbody.insertBefore(row, tbody.firstChild);
+    
+    // Remove old rows if too many
+    while (tbody.children.length > 20) {
+        tbody.removeChild(tbody.lastChild);
+    }
+}
+
+function updateMetrics(data) {
+    // Update risk score or other metrics if needed
+    // For now, just log
+    console.log('Updating metrics with new alert');
 }
 
 // ── Utils ────────────────────────────────────────────────────────────────────

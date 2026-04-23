@@ -229,16 +229,31 @@ function updateTourBox(step) {
     tourBox.innerHTML = `
         <div class="tour-header">
             <div class="tour-step">${stepLabel}</div>
-            <button type="button" class="tour-link" onclick="skipDemoTour()">Skip Tutorial</button>
+            <button type="button" class="tour-link" id="tour-skip-btn">Skip Tutorial</button>
         </div>
         <div class="tour-title">${step.title}</div>
         <div class="tour-copy">${step.text}</div>
         <div class="tour-actions">
-            ${showBack ? '<button type="button" class="tour-btn tour-btn--secondary" onclick="prevDemoStep()">Back</button>' : ''}
-            ${showNext ? `<button type="button" class="tour-btn tour-btn--primary" onclick="nextDemoStep()">${nextLabel}</button>` : `<button type="button" class="tour-btn tour-btn--primary" disabled>${step.interactive ? 'Click to Continue' : nextLabel}</button>`}
+            ${showBack ? '<button type="button" class="tour-btn tour-btn--secondary" id="tour-back-btn">Back</button>' : ''}
+            ${showNext ? `<button type="button" class="tour-btn tour-btn--primary" id="tour-next-btn">${nextLabel}</button>` : `<button type="button" class="tour-btn tour-btn--primary" disabled id="tour-next-btn">${step.interactive ? 'Click to Continue' : nextLabel}</button>`}
         </div>
     `;
 
+    // Attach event listeners
+    const skipBtn = tourBox.querySelector('#tour-skip-btn');
+    if (skipBtn) {
+        skipBtn.addEventListener('click', skipDemoTour);
+    }
+
+    const backBtn = tourBox.querySelector('#tour-back-btn');
+    if (backBtn) {
+        backBtn.addEventListener('click', prevDemoStep);
+    }
+
+    const nextBtn = tourBox.querySelector('#tour-next-btn');
+    if (nextBtn && !nextBtn.disabled) {
+        nextBtn.addEventListener('click', nextDemoStep);
+    }
 }
 
 window.nextDemoStep = function() {

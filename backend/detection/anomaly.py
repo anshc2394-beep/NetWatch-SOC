@@ -42,6 +42,7 @@ _scaler: StandardScaler         = StandardScaler()
 _calibrating: bool              = True
 _calibration_start: float       = 0.0
 _last_retrain: float            = 0.0
+_on_alert_callback = None
 
 
 def _generate_actions(attack_type, anomaly_data):
@@ -100,6 +101,8 @@ def _save_alert_to_db(alert_data):
         )
         db.session.add(alert)
         db.session.commit()
+        if _on_alert_callback:
+            _on_alert_callback(alert_data)
     except Exception as e:
         logger.log_system(f"Failed to save alert to DB: {e}")
 
@@ -292,11 +295,12 @@ def get_config():
         "log_anomalies": LOG_ANOMALIES
     }
 
-def start():
+def start(on_alert_callback=None):
     """Start the detector worker as a background daemon thread."""
-    global _is_running
+    global _is_running, _on_alert_callback
     if _is_running:
         return
+    _on_alert_callback = on_alert_callback
     _is_running = True
     t = threading.Thread(target=_detector_loop, daemon=True, name="DetectorWorker")
     t.start()

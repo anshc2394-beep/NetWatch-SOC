@@ -5,6 +5,7 @@ Contains all Flask routes for the NetWatch-SOC application.
 
 from flask import Flask, jsonify, render_template, request, session, redirect, url_for
 from flask_login import LoginManager, login_required, current_user
+from flask_socketio import SocketIO, emit
 from backend.capture import sniffer
 from backend.detection import anomaly as detector
 import backend.analysis.logger as logger
@@ -12,6 +13,8 @@ from backend.models.models import init_db, db, User
 from backend.api.auth import auth_bp
 import random
 import time
+
+socketio = SocketIO()
 
 # Persistent Simulation Store
 SIMULATION_CACHE = {
@@ -32,6 +35,17 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
+
+    socketio.init_app(app)
+
+    @socketio.on('connect')
+    def handle_connect():
+        print('Client connected')
+        emit('status', {'message': 'Connected to NetWatch SOC'})
+
+    @socketio.on('disconnect')
+    def handle_disconnect():
+        print('Client disconnected')
 
     @login_manager.user_loader
     def load_user(user_id):
@@ -109,7 +123,7 @@ def create_app():
             interface = None
             
         sniffer.start(interface=interface)
-        detector.start()
+        detector.start(on_alert_callback=lambda data: socketio.emit('new_alert', data))
         
         logger.log_api(f"API instructed backend to begin monitoring. IFace: {interface}, Dur: {duration}s")
         return jsonify({"status": "started"})
